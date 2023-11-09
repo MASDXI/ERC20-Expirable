@@ -34,6 +34,6 @@ interface IERC20UTXO {
 
     event TransactionSpent(uint256 indexed id, address indexed spender);
 
-    event Approval(address indexed owner, address indexed spender, uint256 id, uint256 value);
+    // event Approval(address indexed owner, address indexed spender, uint256 id, uint256 value);
 
 }

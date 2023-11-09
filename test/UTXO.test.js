@@ -6,6 +6,7 @@ describe("Unspent Transaction Output contract", function() {
 
   let token;
   let accounts;
+  let timstamp = Date.now();
 
   before(async () => {
     const contract = await ethers.getContractFactory("UTXOToken");
@@ -15,6 +16,7 @@ describe("Unspent Transaction Output contract", function() {
   });
 
   it("Mint", async function() {
+    // await time.increaseTo(timstamp);
     await token.mint(10000,[10000,accounts[0].address]);
     const totalSupply = await token.totalSupply();
     expect(await token.balanceOf(accounts[0].address)).to.equal(totalSupply.toNumber());
@@ -22,10 +24,11 @@ describe("Unspent Transaction Output contract", function() {
 
   it("Retrieve UTXO data", async function() {
     const utxo  = await token.utxo(0);
-
+    // const abiCoder = new ethers.utils.AbiCoder();
+    // const data = abiCoder.decode(["uint256"],utxo.data)
     expect(utxo.amount.toNumber()).to.equal(10000);
-    expect(utxo.owner).to.equal("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266");
-    // expect(utxo.data).to.not.equal("");
+    expect(utxo.owner).to.equal(accounts[0].address);
+    // expect(data.toString()).to.equal(timstamp);
     expect(utxo.spent).to.equal(false);
   });
 
@@ -46,9 +49,19 @@ describe("Unspent Transaction Output contract", function() {
     await time.increaseTo(data);
     const hashed = ethers.utils.solidityKeccak256(["uint256"],[1]);
     const sig = await accounts[0].signMessage(ethers.utils.arrayify(hashed));
-    await expect(token["transfer(address,uint256,(uint256,bytes))"](accounts[1].address, 10000, [1,sig])).to.be.revertedWith(
-      "UTXO has been expired"
-    );
+    await expect(
+      token["transfer(address,uint256,(uint256,bytes))"]
+      (accounts[1].address, 10000, [1,sig]))
+      .to.be.revertedWith( "UTXO has been expired");
   });
+  
+  // @TODO
+  it("approve", async function() {});
+
+  // @TODO
+  it("transferFrom", async function (){});
+
+  // @TODO
+  it("allowance", async function (){});
   
 });

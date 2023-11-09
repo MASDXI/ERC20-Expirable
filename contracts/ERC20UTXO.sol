@@ -72,40 +72,40 @@ abstract contract ERC20UTXO is Context, ERC20, IERC20UTXO {
     function _create(TxOutput memory output, address creator, bytes memory data) internal virtual {
         require(output.owner != address(0),"ERC20UTXO: create utxo output to zero address");
         uint256 id = utxoLength()+1;
-        UTXO memory utxo = UTXO(output.amount, output.owner, data, false);
+        UTXO memory cacheUtxo = UTXO(output.amount, output.owner, data, false);
         
-        _beforeCreate(output.owner,utxo);
+        _beforeCreate(output.owner,cacheUtxo);
 
-        _utxos.push(utxo);
+        _utxos.push(cacheUtxo);
         emit TransactionCreated(id, creator);
 
-        _afterCreate(output.owner,utxo);
+        _afterCreate(output.owner,cacheUtxo);
     }
 
     function _spend(TxInput memory inputs, address spender) internal virtual {
         require(inputs.id < _utxos.length, "ERC20UTXO: utxo id out of bound");
-        UTXO memory utxo = _utxos[inputs.id];
-        require(!utxo.spent, "ERC20UTXO: utxo has been spent");
+        UTXO memory cacheUtxo = _utxos[inputs.id];
+        require(!cacheUtxo.spent, "ERC20UTXO: utxo has been spent");
 
-        _beforeSpend(utxo.owner,utxo);
+        _beforeSpend(cacheUtxo.owner,cacheUtxo);
 
         require(
-            utxo.owner == keccak256(abi.encodePacked(inputs.id))
+            cacheUtxo.owner == keccak256(abi.encodePacked(inputs.id))
                           .toEthSignedMessageHash()
                           .recover(inputs.signature),
                           "ERC20UTXO: invalid signature");
         _utxos[inputs.id].spent = true;
         emit TransactionSpent(inputs.id, spender);
 
-        _afterSpend(utxo.owner,utxo);
+        _afterSpend(cacheUtxo.owner,cacheUtxo);
     }
 
-    function _beforeCreate(address creator, UTXO memory utxo) internal virtual {}
+    function _beforeCreate(address creator, UTXO memory Utxo) internal virtual {}
 
-    function _afterCreate(address creator, UTXO memory utxo) internal virtual {}
+    function _afterCreate(address creator, UTXO memory Utxo) internal virtual {}
 
-    function _beforeSpend(address spender, UTXO memory utxo) internal virtual {}
+    function _beforeSpend(address spender, UTXO memory Utxo) internal virtual {}
 
-    function _afterSpend(address spender, UTXO memory utxo) internal virtual {}
+    function _afterSpend(address spender, UTXO memory Utxo) internal virtual {}
     
 }

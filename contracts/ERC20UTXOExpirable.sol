@@ -25,5 +25,6 @@ abstract contract ERC20UTXOExpirable is ERC20UTXO, Ownable {
     function _beforeSpend(address spender, UTXO memory utxo) internal override {
         uint256 expireDate = abi.decode(utxo.data, (uint256));
         require(block.timestamp < expireDate,"UTXO has been expired");
+        super._beforeCreate(spender, utxo);
     }
 }

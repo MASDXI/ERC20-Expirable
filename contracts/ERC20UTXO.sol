@@ -6,8 +6,8 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "./IERC20UTXO.sol";
 
-/// @TODO doing it more plugin/extension style
-/// @TODO adding feature compatible with ERC20 standard
+// @TODO doing it more plugin/extension style
+// @TODO adding feature compatible with ERC20 standard
 // Function
 // function transfer(address _to, uint256 _value) public returns (bool success) [DONE_WITH_CONDITION]
 // function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) [TODO]
@@ -19,7 +19,6 @@ import "./IERC20UTXO.sol";
 // event TransactionSpent(bytes32 indexed _id) [TODO]
 // event TransactionCreated(bytes32 indexed _id) [TODO]
 
-/// @NOTE 
 // Function
 // transfer require utxo id and amount? security concern?
 // transferFrom require utxo id and amount? security concern?
@@ -27,8 +26,10 @@ import "./IERC20UTXO.sol";
 
 abstract contract ERC20UTXO is Context, ERC20, IERC20UTXO {
     using ECDSA for bytes32;
-    
+
     UTXO[] private _utxos;
+
+    constructor(string memory _name, string memory _symbol) ERC20(_name, _symbol) {}
 
     function utxoLength() public override view returns (uint256) {
         return _utxos.length;
@@ -39,11 +40,11 @@ abstract contract ERC20UTXO is Context, ERC20, IERC20UTXO {
         return _utxos[id];
     }
 
-    function transfer(uint256 amount, TxInput memory input, TxOutput memory output) public returns (bool) {
+    function transfer(address account, uint256 value, TxInput memory input) public returns (bool) {
+        TxOutput memory cacheTxOutput = TxOutput({amount: value, owner: account});
         address creator = _msgSender();
-        _transfer(amount, input, output, creator);
+        _transfer(value, input, cacheTxOutput, creator);
         return true;
-        emit Transfer(creator, output.owner, amount);
     }
 
     function _transfer(uint256 amount, TxInput memory input, TxOutput memory output, address creator) internal virtual {
@@ -52,18 +53,12 @@ abstract contract ERC20UTXO is Context, ERC20, IERC20UTXO {
         if (output.amount < cache.amount) {
             uint256 value = cache.amount - output.amount;
             _spend(input, creator);
-            unchecked {
-                _balances[creator] -= value;   
-                _balances[output.owner] += amount;
-            }
+            _transfer(creator, output.owner, value);
             _create(output, creator, cache.data);
             _create(TxOutput(value, creator), creator, cache.data);
         } else {
             _spend(input,creator);
-            unchecked {
-                _balances[creator] -= amount;   
-                _balances[output.owner] += amount;
-            }
+            _transfer(creator, output.owner, amount);
             _create(output, creator, cache.data);
         }
     }
@@ -82,7 +77,7 @@ abstract contract ERC20UTXO is Context, ERC20, IERC20UTXO {
         _beforeCreate(output.owner,utxo);
 
         _utxos.push(utxo);
-        emit UTXOCreated(id, creator);
+        emit TransactionCreated(id, creator);
 
         _afterCreate(output.owner,utxo);
     }
@@ -100,7 +95,7 @@ abstract contract ERC20UTXO is Context, ERC20, IERC20UTXO {
                           .recover(inputs.signature),
                           "ERC20UTXO: invalid signature");
         _utxos[inputs.id].spent = true;
-        emit UTXOSpent(inputs.id, spender);
+        emit TransactionSpent(inputs.id, spender);
 
         _afterSpend(utxo.owner,utxo);
     }

@@ -33,7 +33,7 @@ describe("Unspent Transaction Output contract", function() {
     const hashed = ethers.utils.solidityKeccak256(["uint256"],[0]);
     const sig = await accounts[0].signMessage(ethers.utils.arrayify(hashed));
     const address = ethers.utils.verifyMessage(ethers.utils.arrayify(hashed),sig);
-    await token.transfer(10000,[0,sig],[10000,accounts[1].address]);
+    await token["transfer(address,uint256,(uint256,bytes))"](accounts[1].address, 10000, [0,sig]);
     expect(await token.balanceOf(address)).to.equal(0);
     expect(await token.balanceOf(accounts[1].address)).to.equal(10000);
   });
@@ -46,7 +46,7 @@ describe("Unspent Transaction Output contract", function() {
     await time.increaseTo(data);
     const hashed = ethers.utils.solidityKeccak256(["uint256"],[1]);
     const sig = await accounts[0].signMessage(ethers.utils.arrayify(hashed));
-    await expect(token.transfer(10000,[1,sig],[10000,accounts[1].address])).to.be.revertedWith(
+    await expect(token["transfer(address,uint256,(uint256,bytes))"](accounts[1].address, 10000, [1,sig])).to.be.revertedWith(
       "UTXO has been expired"
     );
   });

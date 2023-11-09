@@ -24,11 +24,11 @@ interface IERC20UTXO {
 
     function utxoLength() external view returns (uint256);
 
-    function listunspent(address account) external view returns (UTXO memory);
+    // function listunspent(address account) external view returns (UTXO memory);
 
-    function transfer(uint256 amount, TxInput memory input, TxOutput memory output) external returns (bool);
+    function transfer(address account, uint256 amount, TxInput memory input) external returns (bool);
 
-    event Transfer(address indexed from, address indexed to, uint256 value);
+    // event Transfer(address indexed from, address indexed to, uint256 value);
 
     event TransactionCreated(uint256 indexed id, address indexed creator);
 

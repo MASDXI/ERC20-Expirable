@@ -3,46 +3,34 @@ pragma solidity 0.8.14;
 
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "./IERC20UTXO.sol";
 
-contract ERC20UTXO is Context, IERC20UTXO {
+/// @TODO doing it more plugin/extension style
+/// @TODO adding feature compatible with ERC20 standard
+// Function
+// function transfer(address _to, uint256 _value) public returns (bool success) [DONE_WITH_CONDITION]
+// function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) [TODO]
+// function approve(address _spender, uint256 _value) public returns (bool success) [TODO]
+// function allowance(address _owner, address _spender) public view returns (uint256 remaining) [TODO]
+// Event
+// event Transfer(address indexed _from, address indexed _to, uint256 _value) [DONE]
+// event Approval(address indexed _owner, address indexed _spender, uint256 _value) [DONE]
+// event TransactionSpent(bytes32 indexed _id) [TODO]
+// event TransactionCreated(bytes32 indexed _id) [TODO]
+
+/// @NOTE 
+// Function
+// transfer require utxo id and amount? security concern?
+// transferFrom require utxo id and amount? security concern?
+// approve require utxo and amount? security concern?
+
+abstract contract ERC20UTXO is Context, ERC20, IERC20UTXO {
     using ECDSA for bytes32;
     
     UTXO[] private _utxos;
 
-    mapping(address => uint256) private _balances;
-
-    uint256 private _totalSupply;
-
-    string private _name;
-    string private _symbol;
-    
-    constructor(string memory name_, string memory symbol_) {
-        _name = name_;
-        _symbol = symbol_;
-    }
-
-    function name() public view virtual override returns (string memory){
-        return _name;
-    }
-
-    function symbol() public view virtual override returns (string memory){
-        return _symbol;
-    }
-
-    function decimals() public view virtual override returns (uint8){
-        return 18;
-    }
-
-    function totalSupply() public view virtual override returns (uint256) {
-        return _totalSupply;
-    }
-
-    function balanceOf(address account) public view virtual override returns (uint256) {
-        return _balances[account];
-    }
-
-    function utxoLength() public view returns (uint256) {
+    function utxoLength() public override view returns (uint256) {
         return _utxos.length;
     }
 
@@ -82,10 +70,7 @@ contract ERC20UTXO is Context, IERC20UTXO {
 
     function _mint(uint256 amount, TxOutput memory output, bytes memory data) internal virtual {
         require(output.amount == amount, "ERC20UTXO: invalid amounts");
-        _totalSupply += amount;
-        unchecked {
-            _balances[output.owner] += amount;
-        }
+        _mint(output.owner, output.amount);
         _create(output, address(0), data);
     }
     

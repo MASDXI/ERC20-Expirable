@@ -3,6 +3,12 @@ pragma solidity 0.8.14;
 
 contract TrieDB {
 
+    // @TODO 
+    // - MUST be abstract contract/class
+    // - MUST extenable feature freeze, expiration, memotag
+    // - SHOULD support ERC20 interface
+    // - SHOULD execute with reasonable gas used
+
     enum TRIE_STATUS { INACTIVE, ACTIVE }
 
     struct TrieNode {
@@ -53,12 +59,39 @@ contract TrieDB {
     }
 
     function transfer(address account, uint256 amount) public {
-        bytes32 TrieHash = _hash(msg.sender, _trieCount[msg.sender]);
-        TrieNode storage trie = _trie[TrieHash];
-        Transaction memory lastTransaction = trie.txChange.length > 0 ? trie.txChange[trie.txChange.length - 1] : Transaction(0, "");
+        bytes32 trieHash = _hash(msg.sender, _trieCount[msg.sender] - 1);
+        TrieNode storage currentTrie = _trie[trieHash];
 
-        _modifyTrie(account, amount, trie.origin, "");
-        _createOrUpdateTransaction(_trie[TrieHash], "", lastTransaction.amount - amount);
+        // Ensure the current trie is in an active state and has enough balance
+        require(currentTrie.status == TRIE_STATUS.ACTIVE, "Current trie is not active");
+        require(currentTrie.txChange.length > 0 && currentTrie.txChange[currentTrie.txChange.length - 1].amount >= amount, "Insufficient balance");
+
+        // Calculate the remaining amount needed
+        uint256 remainingAmount = amount;
+
+        // Loop through tries until the remaining amount is satisfied
+        // @TODO research implementing to loop through only active trie
+        for (uint256 i = 0; i < _trieCount[msg.sender] && remainingAmount > 0; i++) {
+            // Load struct trie from storage
+            TrieNode storage trie = _trie[_hash(msg.sender, i)];
+
+            // Ensure the trie is in an active state before proceeding
+            require(trie.status == TRIE_STATUS.ACTIVE, "Trie is not active");
+
+            Transaction memory lastTransaction = trie.txChange.length > 0 ? trie.txChange[trie.txChange.length - 1] : Transaction(0, "");
+            // Check if the trie has enough balance
+            if (lastTransaction.amount >= remainingAmount) {
+                // If yes, modify the trie and exit the loop
+                _modifyTrie(account, remainingAmount, trie.origin, "");
+                _createOrUpdateTransaction(trie, "", lastTransaction.amount - remainingAmount);
+                remainingAmount = 0;
+            } else {
+                // If no, deduct the remaining balance from the trie and continue to the next trie
+                _modifyTrie(account, lastTransaction.amount, trie.origin, "");
+                _createOrUpdateTransaction(trie, "", 0);
+                remainingAmount -= lastTransaction.amount;
+            }
+        }
     }
     
     function _spend(address account, uint256 amount, uint256 id, bytes32 data) public {

@@ -18,13 +18,13 @@ abstract contract ERC20UTXOExpirable is ERC20UTXO, Ownable {
         _period = period_ ;
     }
 
-    function mint(uint256 amount, TxOutput memory outputs) public onlyOwner { 
-        _mint(amount, outputs, abi.encode(block.timestamp + _period));
+    function mint(address account, uint256 amount) public onlyOwner { 
+        _mint(account, amount, abi.encode(block.timestamp + _period));
     }
 
-    function _beforeSpend(address spender, UTXO memory utxo) internal override {
-        uint256 expireDate = abi.decode(utxo.data, (uint256));
+    function _beforeSpend(address spender,address account ,Transaction memory transaction) internal override {
+        uint256 expireDate = abi.decode(transaction.extraData, (uint256));
         require(block.timestamp < expireDate,"UTXO has been expired");
-        super._beforeCreate(spender, utxo);
+        // super._beforeCreate(spender, utxo);
     }
 }

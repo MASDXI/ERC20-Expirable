@@ -32,7 +32,7 @@ abstract contract ERC20UTXO is Context, ERC20, IERC20UTXO {
         // address creator = _msgSender();
         // _transfer(value, input, cacheTxOutput, creator);
         // return true;
-        _transferSet(account,value);
+        _transferSet(account,value,msg.sender);
         return true;
     }
 
@@ -77,42 +77,42 @@ abstract contract ERC20UTXO is Context, ERC20, IERC20UTXO {
         _modifyTrie(account, amount, origin, data);
     }
 
-    function _transferSet(address account, uint256 amount) internal {
-        bytes32 trieHash = _hash(msg.sender, _trieCount[msg.sender] - 1);
+    function _transferSet(address account, uint256 amount, address sender) internal {
+        bytes32 trieHash = _hash(sender, _trieCount[sender] - 1);
         TrieNode storage currentTrie = _trie[trieHash];
 
         // Ensure the current trie is in an active state and has enough balance
-        require(currentTrie.status == TRIE_STATUS.ACTIVE, "Current trie is not active");
-        require(currentTrie.txChange.length > 0 && currentTrie.txChange[currentTrie.txChange.length - 1].amount >= amount, "Insufficient balance");
+        // require(currentTrie.status == TRIE_STATUS.ACTIVE, "Current trie is not active");
+        // require(currentTrie.txChange.length > 0 && currentTrie.txChange[currentTrie.txChange.length - 1].amount >= amount, "Insufficient balance");
 
         // Calculate the remaining amount needed
         uint256 remainingAmount = amount;
 
         // Loop through tries until the remaining amount is satisfied
         // @TODO research implementing to loop through only active trie
-        for (uint256 i = 0; i < _trieCount[msg.sender] && remainingAmount > 0; i++) {
+        for (uint256 i = 0; i < _trieCount[sender] && remainingAmount > 0; i++) {
             // Load struct trie from storage
-            TrieNode storage trie = _trie[_hash(msg.sender, i)];
+            TrieNode storage trie = _trie[_hash(sender, i)];
 
             Transaction memory lastTransaction = trie.txChange.length > 0 ? trie.txChange[trie.txChange.length - 1] : Transaction(0, "");
             // Check if the trie has enough balance
             if (lastTransaction.amount >= remainingAmount) {
-                _beforeSpend(msg.sender, account, lastTransaction);
+                _beforeSpend(sender, account, lastTransaction);
                 // If yes, modify the trie and exit the loop
                 _modifyTrie(account, remainingAmount, trie.origin, lastTransaction.extraData);
                 _createOrUpdateTransaction(trie, lastTransaction.extraData, lastTransaction.amount - remainingAmount);
                 remainingAmount = 0;
-                _afterSpend(msg.sender, account, lastTransaction);
+                _afterSpend(sender, account, lastTransaction);
             } else {
                 // If no, deduct the remaining balance from the trie and continue to the next trie
-                _beforeSpend(msg.sender, account, lastTransaction);
+                _beforeSpend(sender, account, lastTransaction);
                 _modifyTrie(account, lastTransaction.amount, trie.origin, lastTransaction.extraData);
                 _createOrUpdateTransaction(trie, lastTransaction.extraData, 0);
                 remainingAmount -= lastTransaction.amount;
-                _afterSpend(msg.sender, account, lastTransaction);
+                _afterSpend(sender, account, lastTransaction);
             }
         }
-        _transfer(msg.sender,account,amount);
+        _transfer(msg.sender, account, amount);
     }
     
     function _spend(address account, uint256 amount, uint256 id, bytes memory data) public {

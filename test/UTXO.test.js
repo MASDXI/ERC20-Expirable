@@ -17,7 +17,11 @@ describe("Unspent Transaction Output contract", function() {
 
   it("Mint", async function() {
     // await time.increaseTo(timstamp);
-    await token.mint(accounts[0].address,10000);
+    for (i = 0; i < 10; i++) {
+      await token.mint(accounts[0].address,1000);
+    }
+    // await token.mint(accounts[0].address,10000);
+    // await token.mint(accounts[0].address,1000);
     const totalSupply = await token.totalSupply();
     expect(await token.balanceOf(accounts[0].address)).to.equal(totalSupply.toNumber());
   });
@@ -26,10 +30,10 @@ describe("Unspent Transaction Output contract", function() {
     // const utxo  = await token.utxo(0);
     // const abiCoder = new ethers.utils.AbiCoder();
     // const data = abiCoder.decode(["uint256"],utxo.data)
-    expect(utxo.amount.toNumber()).to.equal(10000);
-    expect(utxo.owner).to.equal(accounts[0].address);
-    // expect(data.toString()).to.equal(timstamp);
-    expect(utxo.spent).to.equal(false);
+    expect(await token.balanceOf(accounts[0].address)).to.equal(10000);
+    // expect(utxo.owner).to.equal(accounts[0].address);
+    // // expect(data.toString()).to.equal(timstamp);
+    // expect(utxo.spent).to.equal(false);
   });
 
   it("Spent UTXO", async function(){

@@ -8,12 +8,8 @@ interface IERC20UTXO {
     struct TrieNode {
         bytes32 origin;
         TRIE_STATUS status;
-        Transaction[] txChange;
-    }
-
-    struct Transaction {
-        uint256 amount;
-        bytes extraData;
+        uint256 balance;
+        bytes32 extraData;
     }
     
     // function utxo(uint256 id) external view returns (UTXO memory);

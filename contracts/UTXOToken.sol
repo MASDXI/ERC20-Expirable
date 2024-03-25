@@ -7,6 +7,6 @@ contract UTXOToken is ERC20UTXOExpirable {
 
     constructor() 
         ERC20UTXO("ExpireToken","EXPT") 
-        ERC20UTXOExpirable(31_556_926) { 
+        ERC20UTXOExpirable(4, 15) { 
     }
 }

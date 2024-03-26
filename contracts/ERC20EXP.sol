@@ -1,19 +1,27 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.14;
 
-/// @TODO refactor code to support custom period
+/// @TODO refactor code to support custom period.
+// _mint that inherit from @openzeppelin/contracts SHOULD NOT BE USE.
+// _burn that inherit from @openzeppelin/contracts SHOULD NOT BE USE.
 
-contract ERC20UTXOExpirable {
-    // Contract Constant Variables.
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "./TrieDB.sol";
+
+abstract contract ERC20Expirable is ERC20, TrieDB, {
+    // contract constant variables.
     uint8 constant MINIMUM_EXPIRE_PERIOD_SLOT = 1;
     uint8 constant MAXIMUM_EXPIRE_PERIOD_SLOT = 8;
     // uint8 constant SLOT_PER_ERA = 4;
     // uint32 constant YEAR_IN_SECOND = 31_556_926;
 
-    // Contract Configuration Variables.
+    // contract configuration variables.
     uint8 private _expirePeriod;
     uint32 private _blockPerYear;
 
+    /// @TODO change to trieDB to store tire node.
+    // each ERA contain 'n' SLOT 
+    // each SLOT can contain trie node inside
     mapping(address => mapping(uint256 => mapping(uint8 => uint256)))
         private _balances;
 
@@ -22,25 +30,33 @@ contract ERC20UTXOExpirable {
         _updateExpirePeriod(period);
     }
 
-    // internal
-    function _updateBlockPerYear(uint32 blocks) internal {
+    // private function
+    function _updateBlockPerYear(uint32 blocks) private {
+        // @TODO require check
+        uint256 _blockPerYearCache = _blockPerYear;
         _blockPerYear = blocks;
+        emit BlockProducedPerYearUpdated(uint256 _blockPerYearCache, uint256 blocks);
     }
 
-    function _updateExpirePeriod(uint8 period) internal {
+    function _updateExpirePeriod(uint8 period) private {
+        // @TODO require check
+        uint8 _expirePeriodCache = _expirePeriod;
         _expirePeriod = period;
+        emit TokenExpiryPeriodUpdated(uint8 _periodCache, uint8 period);
     }
 
-    function _calculateEra(uint256 blockNumber) public view returns (uint256) {
+    // internal function
+    function _calculateEra(uint256 blockNumber) public virtual view returns (uint256) {
         return blockNumber / _blockPerYear;
     }
 
-    function _calculateSlot(uint256 blockNumber) public view returns (uint8) {
+    function _calculateSlot(uint256 blockNumber) public virtual view returns (uint8) {
         return uint8((blockNumber % _blockPerYear) / (_blockPerYear / 4));
     }
 
     function _calculateEraCycleFromExpirePeriodSlot()
         public
+        virtual
         view
         returns (uint8)
     {
@@ -72,7 +88,18 @@ contract ERC20UTXOExpirable {
         return totalBalance;
     }
 
-    function balanceOf(address account) public view returns (uint256) {
+    function _mint(address account, uint256 amount) internal {
+        require(account != address(0), "ERC20: mint to the zero address");
+        require(amount > 0, "Amount must be greater than zero");
+        _balances[account][_calculateEra(block.number)][
+            _calculateSlot(block.number)
+        ] += amount;
+        _create(account, amount, null /*origin*/, null /*data*/);
+        emit Transfer(address(0), account, amount);
+    }
+
+    // public function
+    function balanceOf(address account) public override view returns (uint256) {
         uint256 blockNumber = block.number;
         uint256 era = _calculateEra(blockNumber);
         uint8 slot = _calculateSlot(blockNumber);
@@ -87,23 +114,17 @@ contract ERC20UTXOExpirable {
         return _lookBack(account, fromEra, fromSlot, era, slot);
     }
 
-    function blockPerEra() public view returns (uint256) {
+    function transfer(address account, uint256 amount) public virtual override returns (bool) {
+        // @TODO research
+        // Datetime need to be built-in
+        // beforetransfer hook function style conditioned transfer.
+        // aftertransfer hook function style conditioned transfer.
+
+    function blockPerEra() public override view returns (uint256) {
         return _blockPerYear;
     }
 
-    function blockPerSlot() public view returns (uint256) {
+    function blockPerSlot() public override view returns (uint256) {
         return _blockPerYear / 4;
-    }
-
-    function mint(address account, uint256 amount) public {
-        require(account != address(0), "ERC20: mint to the zero address");
-        require(amount > 0, "Amount must be greater than zero");
-        // Mint tokens to the specified account
-        _balances[account][_calculateEra(block.number)][
-            _calculateSlot(block.number)
-        ] += amount;
-        // _totalSupply += amount;
-
-        // emit Transfer(address(0), account, amount);
     }
 }

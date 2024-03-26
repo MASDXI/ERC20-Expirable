@@ -82,6 +82,7 @@ abstract contract ERC20Expirable is ERC20, TrieDB, {
             uint8 startSlot = (era == fromEra) ? fromSlot : 0;
             uint8 endSlot = (era == toEra) ? toSlot : 3;
             for (uint8 slot = startSlot; slot <= endSlot; slot++) {
+                // @TODO sumarize only available balance
                 totalBalance += _balances[account][era][slot];
             }
         }
@@ -94,7 +95,8 @@ abstract contract ERC20Expirable is ERC20, TrieDB, {
         _balances[account][_calculateEra(block.number)][
             _calculateSlot(block.number)
         ] += amount;
-        _create(account, amount, null /*origin*/, null /*data*/);
+        // @TODO built-in encode data to trieDB
+        // _create(account, amount, null /*origin*/, null /*data*/);
         emit Transfer(address(0), account, amount);
     }
 
@@ -119,6 +121,8 @@ abstract contract ERC20Expirable is ERC20, TrieDB, {
         // Datetime need to be built-in
         // beforetransfer hook function style conditioned transfer.
         // aftertransfer hook function style conditioned transfer.
+        // create trie when transfer how to know the trie id?
+    }
 
     function blockPerEra() public override view returns (uint256) {
         return _blockPerYear;

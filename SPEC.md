@@ -32,14 +32,15 @@ similar idea fo page in pagination
 
 `Slot` defination
 similar idea of index in each page of pagination
-
-| Number of Slot | Era cycle mapping to Slot                |
+** frist index of slot is 0
+| Number of Slot | Era cycle mapping to Slot |
 |------|--------------------------|
 | 1    | 0 Era cycle, 1 Slot      |
 | 2    | 0 Era cycle, 2 Slot      |
 | 3    | 0 Era cycle, 3 Slot      |
-| 4    | 1 Era cycle, 0 Slot      |
-| 5    | 1 Era cycle, 1 Slot      |
-| 6    | 1 Era cycle, 2 Slot      |
+| 4    | 1 Era cycle, 0 Slot      | 
+| 5    | 1 Era cycle, 1 Slot      | 
+| 6    | 1 Era cycle, 2 Slot      | 
 | 7    | 1 Era cycle, 3 Slot      |
-| 8    | 2 Era cycle, 0 Slot      |
+| 8    | 2 Era cycle, 0 Slot      | 
+

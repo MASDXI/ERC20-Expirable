@@ -12,7 +12,7 @@ abstract contract ERC20Expirable is ERC20, TrieDB, {
     // contract constant variables.
     uint8 constant MINIMUM_EXPIRE_PERIOD_SLOT = 1;
     uint8 constant MAXIMUM_EXPIRE_PERIOD_SLOT = 8;
-    // uint8 constant SLOT_PER_ERA = 4;
+    uint8 constant SLOT_PER_ERA = 4;
     // uint32 constant YEAR_IN_SECOND = 31_556_926;
 
     // contract configuration variables.
@@ -69,6 +69,28 @@ abstract contract ERC20Expirable is ERC20, TrieDB, {
         }
         return eraCycle;
     }
+
+    function getFromEraFromSlotToEraToSlot() internal view returns (uint256, uint8, uint256, uint8) {
+        uint256 _blockNumberCache = block.number;
+        uint256 _toEra = _calculateEra(_blockNumberCache); // toEra
+        uint8 _toSlot = _calculateSlot(_blockNumberCache); // toSlot
+        uint256 _fromEra = _currentEraCache;               // fromEra
+        uint8 _fromSlot;                                   // fromSlot
+        
+        if (expirationPeriod == MAXIMUM_EXPIRE_PERIOD_SLOT) {
+            _fromEra - 2;
+            _fromSlot = _toSlot;
+        } else if (_currentSlotCache > expirationPeriod) {
+            // The SafeLookBack starts within the current era
+            _previousSlot = _currentSlotCache - (expirationPeriod + 1);
+        } else if (_currentSlotCache < expirationPeriod) {
+            // @TODO
+        }  else if (_currentSlotCache == expirationPeriod) {
+            // @TODO
+        }
+        return (_previousEra, _previousSlot, _currentEraCache, _currentSlotCache);
+    }
+
 
     function _lookBack(
         address account,
